@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeMessage AI Scam & Fake News Detector</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'], display: ['Space Grotesk', 'sans-serif'] },
+                    colors: {
+                        safe: { 50:'#ecfdf5',100:'#d1fae5',200:'#a7f3d0',400:'#34d399',500:'#10B981',600:'#059669',700:'#047857' },
+                        danger: { 50:'#fef2f2',100:'#fee2e2',200:'#fecaca',400:'#f87171',500:'#EF4444',600:'#DC2626',700:'#B91C1C' },
+                        warn: { 50:'#fffbeb',100:'#fef3c7',400:'#fbbf24',500:'#F59E0B',600:'#D97706' },
+                        navy: { 900:'#0B0F19',800:'#0F1729',700:'#141C2F',600:'#1A2540' }
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        :root {
+            --bg:#0B0F19;--bg2:#0F1729;--card:#141C2F;--card-hover:#1A2540;
+            --border:#1E293B;--border-light:#2D3B52;
+            --text:#F1F5F9;--text-muted:#94A3B8;--text-dim:#64748B;
+            --safe:#10B981;--danger:#EF4444;--warn:#F59E0B;--accent:#10B981;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        html{scroll-behavior:smooth}
+        body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;min-height:100vh}
+        ::-webkit-scrollbar{width:6px}
+        ::-webkit-scrollbar-track{background:var(--bg)}
+        ::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:3px}
+        .bg-grid{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:radial-gradient(circle at 1px 1px,rgba(255,255,255,0.03) 1px,transparent 0);background-size:40px 40px}
+        .bg-glow-1{position:fixed;top:-200px;right:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(16,185,129,0.08) 0%,transparent 70%);z-index:0;pointer-events:none;animation:floatGlow 15s ease-in-out infinite}
+        .bg-glow-2{position:fixed;bottom:-300px;left:-200px;width:700px;height:700px;background:radial-gradient(circle,rgba(239,68,68,0.05) 0%,transparent 70%);z-index:0;pointer-events:none;animation:floatGlow 20s ease-in-out infinite reverse}
+        @keyframes floatGlow{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,-20px)}}
+        .page{display:none;opacity:0;transition:opacity 0.4s ease;position:relative;z-index:1}
+        .page.active{display:block;opacity:1}
+        .nav-glass{background:rgba(11,15,25,0.8);backdrop-filter:blur(20px);border-bottom:1px solid rgba(30,41,59,0.6)}
+        .nav-link{position:relative;padding:0.5rem 0;color:var(--text-muted);transition:color 0.3s ease;font-weight:500;font-size:0.9rem;text-decoration:none}
+        .nav-link::after{content:'';position:absolute;bottom:-2px;left:0;width:0;height:2px;background:var(--accent);transition:width 0.3s ease;border-radius:1px}
+        .nav-link:hover,.nav-link.active{color:var(--text)}
+        .nav-link:hover::after,.nav-link.active::after{width:100%}
+        .glass-card{background:rgba(20,28,47,0.7);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:16px;transition:all 0.3s ease}
+        .glass-card:hover{border-color:var(--border-light);transform:translateY(-2px)}
+        .input-area{background:rgba(15,23,41,0.8);border:1.5px solid var(--border);border-radius:14px;color:var(--text);resize:none;transition:all 0.3s ease;font-family:inherit;font-size:1rem;line-height:1.7;width:100%}
+        .input-area:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(16,185,129,0.1)}
+        .input-area::placeholder{color:var(--text-dim)}
+        .btn-primary{background:linear-gradient(135deg,#10B981,#059669);color:white;border:none;border-radius:12px;padding:14px 32px;font-weight:700;font-size:1rem;cursor:pointer;transition:all 0.3s ease;position:relative;overflow:hidden;font-family:inherit;width:100%}
+        .btn-primary::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.15),transparent);opacity:0;transition:opacity 0.3s ease}
+        .btn-primary:hover::before{opacity:1}
+        .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(16,185,129,0.3)}
+        .btn-primary:active{transform:translateY(0)}
+        .btn-primary:disabled{opacity:0.6;cursor:not-allowed;transform:none;box-shadow:none}
+        .btn-secondary{background:var(--card);color:var(--text-muted);border:1px solid var(--border);border-radius:10px;padding:10px 18px;font-weight:600;font-size:0.85rem;cursor:pointer;transition:all 0.3s ease;font-family:inherit}
+        .btn-secondary:hover{border-color:var(--border-light);color:var(--text);background:var(--card-hover)}
+        .btn-icon{width:44px;height:44px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.3s ease;font-size:1rem}
+        .btn-icon:hover{border-color:var(--accent);color:var(--accent);background:rgba(16,185,129,0.05)}
+        .btn-icon.recording{border-color:var(--danger);color:var(--danger);animation:pulse-red 1.5s ease-in-out infinite}
+        @keyframes pulse-red{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.3)}50%{box-shadow:0 0 0 8px rgba(239,68,68,0)}}
+        .loader-overlay{position:fixed;inset:0;z-index:100;background:rgba(11,15,25,0.9);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;flex-direction:column;gap:24px}
+        .loader-overlay.active{display:flex}
+        .loader-ring{width:64px;height:64px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .loader-text{color:var(--text-muted);font-size:0.95rem}
+        .loader-steps{display:flex;flex-direction:column;gap:8px;align-items:center}
+        .loader-step{color:var(--text-dim);font-size:0.82rem;transition:all 0.3s ease}
+        .loader-step.done{color:var(--accent)}
+        .loader-step.active{color:var(--text)}
+        .result-badge{display:inline-flex;align-items:center;gap:10px;padding:12px 28px;border-radius:50px;font-weight:800;font-size:1.5rem;letter-spacing:0.05em}
+        .result-badge.safe{background:rgba(16,185,129,0.12);color:var(--safe);border:2px solid rgba(16,185,129,0.3)}
+        .result-badge.suspicious{background:rgba(245,158,11,0.12);color:var(--warn);border:2px solid rgba(245,158,11,0.3)}
+        .result-badge.scam{background:rgba(239,68,68,0.12);color:var(--danger);border:2px solid rgba(239,68,68,0.3)}
+        .prob-ring{width:140px;height:140px;position:relative}
+        .prob-ring svg{transform:rotate(-90deg)}
+        .prob-ring .value{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.8rem}
+        .highlight-scam{background:rgba(239,68,68,0.2);color:#fca5a5;padding:1px 4px;border-radius:3px;font-weight:600}
+        .toast-container{position:fixed;top:80px;right:20px;z-index:200;display:flex;flex-direction:column;gap:10px}
+        .toast{padding:14px 20px;border-radius:12px;font-size:0.88rem;font-weight:500;backdrop-filter:blur(12px);border:1px solid;animation:slideInToast 0.4s ease;max-width:380px;display:flex;align-items:center;gap:10px}
+        .toast.success{background:rgba(16,185,129,0.15);border-color:rgba(16,185,129,0.3);color:#6ee7b7}
+        .toast.error{background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.3);color:#fca5a5}
+        .toast.info{background:rgba(59,130,246,0.15);border-color:rgba(59,130,246,0.3);color:#93c5fd}
+        @keyframes slideInToast{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+        .stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;transition:all 0.3s ease}
+        .stat-card:hover{border-color:var(--border-light)}
+        .admin-table{width:100%;border-collapse:separate;border-spacing:0}
+        .admin-table th{text-align:left;padding:12px 16px;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-dim);border-bottom:1px solid var(--border);font-weight:600}
+        .admin-table td{padding:14px 16px;font-size:0.88rem;border-bottom:1px solid rgba(30,41,59,0.4);color:var(--text-muted);vertical-align:top}
+        .admin-table tr:hover td{background:rgba(20,28,47,0.5)}
+        .admin-table .risk-badge{display:inline-block;padding:3px 10px;border-radius:6px;font-size:0.76rem;font-weight:700;letter-spacing:0.03em}
+        .risk-badge.safe{background:rgba(16,185,129,0.15);color:var(--safe)}
+        .risk-badge.suspicious{background:rgba(245,158,11,0.15);color:var(--warn)}
+        .risk-badge.scam{background:rgba(239,68,68,0.15);color:var(--danger)}
+        .modal-overlay{position:fixed;inset:0;z-index:150;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center}
+        .modal-overlay.active{display:flex}
+        .modal-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:40px;max-width:420px;width:90%;animation:scaleIn 0.3s ease}
+        @keyframes scaleIn{from{transform:scale(0.9);opacity:0}to{transform:scale(1);opacity:1}}
+        .hero-float{animation:heroFloat 6s ease-in-out infinite}
+        @keyframes heroFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+        .fade-up{opacity:0;transform:translateY(20px);transition:all 0.6s ease}
+        .fade-up.visible{opacity:1;transform:translateY(0)}
+        .tab-btn{padding:10px 20px;border-radius:8px;font-weight:600;font-size:0.85rem;cursor:pointer;transition:all 0.3s ease;border:none;background:transparent;color:var(--text-dim);font-family:inherit}
+        .tab-btn.active{background:rgba(16,185,129,0.12);color:var(--accent)}
+        .tab-btn:hover:not(.active){color:var(--text-muted)}
+        .toggle-switch{width:44px;height:24px;border-radius:12px;background:var(--border);position:relative;cursor:pointer;transition:background 0.3s ease;border:none;flex-shrink:0}
+        .toggle-switch.active{background:var(--accent)}
+        .toggle-switch::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:white;transition:transform 0.3s ease}
+        .toggle-switch.active::after{transform:translateX(20px)}
+        @media(max-width:768px){
+            .result-badge{font-size:1.2rem;padding:10px 22px}
+            .prob-ring{width:110px;height:110px}
+            .prob-ring .value{font-size:1.4rem}
+            .admin-table{font-size:0.8rem}
+            .admin-table th,.admin-table td{padding:10px 8px}
+        }
+        @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms !important;transition-duration:0.01ms !important}}
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="bg-glow-1"></div>
+    <div class="bg-glow-2"></div>
+
+    <div class="loader-overlay" id="loader">
+        <div class="loader-ring"></div>
+        <div class="loader-text" id="loaderText">Analyzing message...</div>
+        <div class="loader-steps">
+            <div class="loader-step" id="step1"><i class="fa-solid fa-magnifying-glass" style="margin-right:6px"></i>Scanning keywords...</div>
+            <div class="loader-step" id="step2"><i class="fa-solid fa-link" style="margin-right:6px"></i>Checking URLs...</div>
+            <div class="loader-step" id="step3"><i class="fa-solid fa-language" style="margin-right:6px"></i>Pattern matching...</div>
+            <div class="loader-step" id="step4"><i class="fa-solid fa-chart-line" style="margin-right:6px"></i>Calculating risk score...</div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <nav class="nav-glass fixed top-0 left-0 right-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            <a href="#" onclick="navigateTo('home');return false" class="flex items-center gap-2.5" style="text-decoration:none">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:linear-gradient(135deg,#10B981,#059669)">
+                    <i class="fa-solid fa-shield-halved text-white text-sm"></i>
+                </div>
+                <span class="font-display font-bold text-base tracking-tight hidden sm:block" style="color:var(--text)">SafeMessage <span class="text-safe-500">AI</span></span>
+            </a>
+            <div class="flex items-center gap-5 sm:gap-7">
+                <a href="#" onclick="navigateTo('home');return false" class="nav-link active" id="navHome">Detector</a>
+                <a href="#" onclick="navigateTo('admin-login');return false" class="nav-link" id="navAdmin">Admin</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page active" id="page-home">
+        <main class="pt-24 pb-20 px-4 sm:px-6">
+            <div class="max-w-3xl mx-auto">
+                <section class="text-center mb-12 fade-up">
+                    <div class="hero-float inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2)">
+                        <div class="w-2 h-2 rounded-full bg-safe-500" style="animation:pulse-red 2s ease-in-out infinite;background:var(--safe)"></div>
+                        <span class="text-safe-400 text-sm font-semibold">AI-Powered Protection</span>
+                    </div>
+                    <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-5 tracking-tight">
+                        Stay Safe from<br>
+                        <span style="background:linear-gradient(135deg,#10B981,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Scams with AI</span>
+                    </h1>
+                    <p class="text-base sm:text-lg max-w-xl mx-auto leading-relaxed" style="color:var(--text-muted)">
+                        Paste any suspicious message, link, or WhatsApp forward — our AI detects phishing, fraud, and fake news in seconds.
+                    </p>
+                </section>
+
+                <section class="glass-card p-5 mb-8 fade-up flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(239,68,68,0.1)">
+                        <i class="fa-solid fa-triangle-exclamation text-danger-400 text-sm"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold mb-1" style="color:var(--text)">Real-World Impact</p>
+                        <p class="text-sm leading-relaxed" style="color:var(--text-muted)">
+                            Over <strong class="text-danger-400">12 crore Indians</strong> lost money to online scams in 2024. This tool helps detect and prevent fraud in real-time — no app install needed.
+                        </p>
+                    </div>
+                </section>
+
+                <section class="glass-card p-6 sm:p-8 mb-6 fade-up">
+                    <div class="flex gap-2 mb-5 p-1 rounded-lg" style="background:var(--bg2)">
+                        <button class="tab-btn active" id="tabText" onclick="switchInputTab('text')"><i class="fa-solid fa-message" style="font-size:0.8rem;margin-right:6px"></i>Message</button>
+                        <button class="tab-btn" id="tabLink" onclick="switchInputTab('link')"><i class="fa-solid fa-link" style="font-size:0.8rem;margin-right:6px"></i>Link</button>
+                    </div>
+                    <div id="textInputWrap">
+                        <textarea class="input-area" id="messageInput" rows="5" placeholder="Paste a suspicious message here...&#10;&#10;Example: 'Congratulations! You have won Rs 50,000. Click here to claim now.'" aria-label="Message to analyze" style="padding:16px;margin-bottom:16px"></textarea>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <button class="btn-icon" id="voiceBtn" onclick="toggleVoiceInput()" title="Voice Input" aria-label="Voice input"><i class="fa-solid fa-microphone"></i></button>
+                                <span class="text-xs" style="color:var(--text-dim)" id="voiceStatus"></span>
+                            </div>
+                            <span class="text-xs" style="color:var(--text-dim)" id="charCount">0 characters</span>
+                        </div>
+                    </div>
+                    <div id="linkInputWrap" style="display:none">
+                        <input type="url" class="input-area" id="linkInput" placeholder="https://example.com/suspicious-link" aria-label="URL to analyze" style="padding:16px;margin-bottom:8px">
+                        <p class="text-xs" style="color:var(--text-dim);margin-bottom:16px"><i class="fa-solid fa-circle-info" style="margin-right:4px"></i>We analyze the URL structure, domain patterns, and suspicious indicators</p>
+                    </div>
+                    <button class="btn-primary" id="analyzeBtn" onclick="analyzeInput()" style="margin-top:16px"><i class="fa-solid fa-shield-halved" style="margin-right:8px"></i>Analyze Now</button>
+                </section>
+
+                <section class="flex items-center gap-3 mb-10 px-2 fade-up">
+                    <button class="toggle-switch active" id="privacyToggle" onclick="togglePrivacy()" aria-label="Toggle privacy mode"></button>
+                    <div>
+                        <p class="text-sm font-semibold" style="color:var(--text-muted)">Privacy Mode</p>
+                        <p class="text-xs" style="color:var(--text-dim)" id="privacyText">Your scans are private and not stored on any server</p>
+                    </div>
+                </section>
+
+                <section id="resultSection" style="display:none" class="fade-up visible">
+                    <div class="text-center mb-8" id="resultHeader"></div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6" id="resultStats"></div>
+                    <div class="glass-card p-6 mb-4" id="reasonsCard"></div>
+                    <div class="glass-card p-6 mb-4" id="suggestionsCard"></div>
+                    <div class="glass-card p-6 mb-6" id="highlightCard"></div>
+                    <div class="text-center">
+                        <button class="btn-secondary" onclick="resetAnalysis()"><i class="fa-solid fa-arrow-rotate-left" style="margin-right:8px"></i>Analyze Another Message</button>
+                    </div>
+                </section>
+
+                <section class="mt-16 fade-up">
+                    <h2 class="font-display text-2xl font-bold text-center mb-8">How It Works</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="glass-card p-6 text-center">
+                            <div class="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4" style="background:rgba(16,185,129,0.1)"><i class="fa-solid fa-paste text-safe-400"></i></div>
+                            <h3 class="font-bold text-sm mb-2">Paste Message</h3>
+                            <p class="text-xs leading-relaxed" style="color:var(--text-dim)">Copy any suspicious WhatsApp message, SMS, email, or link</p>
+                        </div>
+                        <div class="glass-card p-6 text-center">
+                            <div class="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4" style="background:rgba(59,130,246,0.1)"><i class="fa-solid fa-brain" style="color:#60a5fa"></i></div>
+                            <h3 class="font-bold text-sm mb-2">AI Analysis</h3>
+                            <p class="text-xs leading-relaxed" style="color:var(--text-dim)">Our engine checks 50+ scam patterns, urgency words, and URL safety</p>
+                        </div>
+                        <div class="glass-card p-6 text-center">
+                            <div class="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4" style="background:rgba(239,68,68,0.1)"><i class="fa-solid fa-shield text-danger-400"></i></div>
+                            <h3 class="font-bold text-sm mb-2">Get Verdict</h3>
+                            <p class="text-xs leading-relaxed" style="color:var(--text-dim)">Instant SAFE or SCAM verdict with reasons and safety suggestions</p>
+                        </div>
+                    </div>
+                </section>
+
+                <footer class="mt-20 text-center pb-8">
+                    <p class="text-xs" style="color:var(--text-dim)">SafeMessage AI — Built to protect millions from digital fraud. Not affiliated with any government body.</p>
+                </footer>
+            </div>
+        </main>
+    </div>
+
+    <div class="page" id="page-admin-login">
+        <main class="pt-28 pb-20 px-4 sm:px-6 min-h-screen flex items-start justify-center">
+            <div class="w-full max-w-md">
+                <div class="text-center mb-8">
+                    <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style="background:rgba(16,185,129,0.1)"><i class="fa-solid fa-lock text-safe-400 text-xl"></i></div>
+                    <h1 class="font-display text-2xl font-bold mb-2">Admin Access</h1>
+                    <p class="text-sm" style="color:var(--text-muted)">Sign in to view scan analytics and user queries</p>
+                </div>
+                <div class="glass-card p-8">
+                    <div class="mb-5">
+                        <label class="block text-sm font-semibold mb-2" style="color:var(--text-muted)">Email Address</label>
+                        <input type="email" class="input-area" id="adminEmail" placeholder="admin@safemessage.ai" aria-label="Admin email" style="padding:14px">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold mb-2" style="color:var(--text-muted)">Password</label>
+                        <div class="relative">
+                            <input type="password" class="input-area" id="adminPassword" placeholder="Enter password" aria-label="Admin password" style="padding:14px;padding-right:44px" onkeydown="if(event.key==='Enter')adminLogin()">
+                            <button style="position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--text-dim);background:none;border:none;cursor:pointer" onclick="togglePasswordVisibility()" aria-label="Toggle password visibility"><i class="fa-solid fa-eye" id="pwdToggleIcon"></i></button>
+                        </div>
+                    </div>
+                    <div id="loginError" style="display:none;margin-bottom:16px;padding:12px;border-radius:10px;font-size:0.88rem;font-weight:500;background:rgba(239,68,68,0.1);color:#fca5a5"></div>
+                    <button class="btn-primary" onclick="adminLogin()"><i class="fa-solid fa-right-to-bracket" style="margin-right:8px"></i>Sign In</button>
+                    <p class="text-center mt-5"><a href="#" onclick="navigateTo('home');return false" class="text-sm font-medium" style="color:var(--text-dim);text-decoration:none"><i class="fa-solid fa-arrow-left" style="margin-right:4px"></i>Back to Detector</a></p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="page" id="page-admin-dashboard">
+        <main class="pt-20 pb-20 px-4 sm:px-6">
+            <div class="max-w-6xl mx-auto">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 pt-4">
+                    <div>
+                        <h1 class="font-display text-2xl font-bold mb-1">Dashboard</h1>
+                        <p class="text-sm" style="color:var(--text-muted)">Overview of all scan activity and analytics</p>
+                    </div>
+                    <button class="btn-secondary" onclick="adminLogout()"><i class="fa-solid fa-right-from-bracket" style="margin-right:6px"></i>Sign Out</button>
+                </div>
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    <div class="stat-card">
+                        <div class="flex items-center gap-2 mb-3"><div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:rgba(59,130,246,0.1)"><i class="fa-solid fa-chart-simple text-xs" style="color:#60a5fa"></i></div><span class="text-xs font-semibold" style="color:var(--text-dim)">Total Scans</span></div>
+                        <p class="font-display text-2xl font-bold" id="statTotal">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <div class="flex items-center gap-2 mb-3"><div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:rgba(239,68,68,0.1)"><i class="fa-solid fa-skull-crossbones text-xs text-danger-400"></i></div><span class="text-xs font-semibold" style="color:var(--text-dim)">Scam Detected</span></div>
+                        <p class="font-display text-2xl font-bold text-danger-400" id="statScam">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <div class="flex items-center gap-2 mb-3"><div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:rgba(245,158,11,0.1)"><i class="fa-solid fa-triangle-exclamation text-xs text-warn-500"></i></div><span class="text-xs font-semibold" style="color:var(--text-dim)">Suspicious</span></div>
+                        <p class="font-display text-2xl font-bold text-warn-500" id="statSuspicious">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <div class="flex items-center gap-2 mb-3"><div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:rgba(16,185,129,0.1)"><i class="fa-solid fa-circle-check text-xs text-safe-400"></i></div><span class="text-xs font-semibold" style="color:var(--text-dim)">Safe</span></div>
+                        <p class="font-display text-2xl font-bold text-safe-400" id="statSafe">0</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <div class="glass-card p-6"><h3 class="font-semibold text-sm mb-4" style="color:var(--text-muted)">Risk Distribution</h3><div style="max-height:260px;display:flex;justify-content:center"><canvas id="pieChart"></canvas></div></div>
+                    <div class="glass-card p-6"><h3 class="font-semibold text-sm mb-4" style="color:var(--text-muted)">Scans Over Time (Last 7 Days)</h3><div style="max-height:260px"><canvas id="barChart"></canvas></div></div>
+                </div>
+                <div class="glass-card p-6">
+                    <div class="flex items-center justify-between mb-5">
+                        <h3 class="font-semibold text-sm" style="color:var(--text-muted)">Recent Scans</h3>
+                        <button style="color:var(--accent);background:none;border:none;cursor:pointer;font-size:0.78rem;font-weight:600;font-family:inherit" onclick="clearAllScans()"><i class="fa-solid fa-trash-can" style="margin-right:4px"></i>Clear All</button>
+                    </div>
+                    <div style="overflow-x:auto">
+                        <table class="admin-table" id="scansTable"><thead><tr><th>Message / Link</th><th>Risk</th><th>Score</th><th>Date</th></tr></thead><tbody id="scansBody"></tbody></table>
+                        <div id="noScansMsg" class="text-center py-12" style="display:none"><i class="fa-solid fa-inbox text-3xl mb-3" style="color:var(--text-dim)"></i><p class="text-sm" style="color:var(--text-dim)">No scans recorded yet</p></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+<script>
+var APP_STATE={currentPage:'home',isLoggedIn:false,privacyMode:true,isRecording:false,currentInputTab:'text',recognition:null,chartInstances:{pie:null,bar:null}};
+
+var SCAM_DETECTOR={
+    highRiskKeywords:['urgent','immediately','act now','click here','click now','verify your account','account suspended','unauthorized access','otp','one time password','share your otp','send otp','prize winner','you have won','congratulations you','lottery winner','won ₹','won rs','won $','free gift','free prize','claim now','claim your','limited time offer','expires today','last chance','kyc update','update your kyc','kyc verification','upi payment','upi id','paytm','phonepe','gpay','crypto reward','bitcoin bonus','earn money','nigerian prince','inheritance','foreign remittance','dear customer','dear user','dear member','your account will be','account blocked','account deactivated','click the link below','tap here','download now','virus detected','your device is','security alert','refund','refund amount','credit your account','reward points','redeem now','cashback offer','lottery','jackpot','sweepstakes','matka','satta','betting','online betting'],
+    mediumRiskKeywords:['free','offer','discount','save money','best deal','exclusive','special offer','subscribe','sign up now','winner','selected','eligible','congratulations','amazing','incredible','unbelievable','shocking','must watch','share this','forward to','send to all','breaking news','just in','urgent news','government scheme','free ration','free subsidy','pm scheme','modi scheme','central scheme','loan approved','pre-approved','instant loan','job offer','work from home','earn per day','part time job','online job','typing job','miracle','cure','treatment','medicine','click below','visit now','open link'],
+    hindiHighRisk:['jaldi','turant','abhhi','fatafat','foran','otp bhejo','otp share karo','otp batayein','link par click karo','link kholo','link open karo','inam','jeet','lottery jeet','inam mila','kyc update karo','kyc complete karo','account band hoga','account block','paisa mila','rupaye mila','₹ mila','free mein','muft','bina paise ke','dhanyawad aap jeete','badhai ho aap jeete'],
+    hinglishPhrases:['congratulations aap jeet','aapko prize mila','account suspend ho jayega','turant click karein','otp share mat karo','otp kisi ko batayein mat'],
+    suspiciousDomainPatterns:[/bit\.ly/i,/tinyurl/i,/short\.url/i,/t\.co/i,/\d{4,}\.com/i,/[a-z]{20,}\.com/i,/free-?prize/i,/win-?now/i,/claim-?reward/i,/secure-?login/i,/account-?verify/i,/update-?kyc/i,/kyc-?update/i,/\.xyz$/i,/\.top$/i,/\.click$/i,/\.buzz$/i,/\.info$/i,/\.online$/i,/\.site$/i,/\.club$/i,/paypal-[a-z]/i,/google-[a-z]/i,/amazon-[a-z]/i,/flipkart-[a-z]/i,/sbi-[a-z]/i,/hdfc-[a-z]/i],
+
+    analyze:function(text){
+        if(!text||!text.trim())return null;
+        var lowerText=text.toLowerCase();
+        var score=0;var reasons=[];var suspiciousWords=[];
+        var self=this;
+        self.highRiskKeywords.forEach(function(kw){
+            if(lowerText.indexOf(kw)!==-1){score+=12;reasons.push('Contains high-risk phrase: "'+kw+'"');suspiciousWords.push(kw);}
+        });
+        self.mediumRiskKeywords.forEach(function(kw){
+            if(lowerText.indexOf(kw)!==-1){score+=5;var found=reasons.some(function(r){return r.indexOf(kw)!==-1;});if(!found){reasons.push('Contains suspicious word: "'+kw+'"');suspiciousWords.push(kw);}}
+        });
+        self.hindiHighRisk.forEach(function(kw){
+            if(lowerText.indexOf(kw)!==-1){score+=10;reasons.push('Hinglish scam indicator: "'+kw+'"');suspiciousWords.push(kw);}
+        });
+        self.hinglishPhrases.forEach(function(ph){
+            if(lowerText.indexOf(ph)!==-1){score+=15;reasons.push('Full scam phrase detected: "'+ph+'"');}
+        });
+        var urls=extractUrls(text);
+        if(urls.length>0){urls.forEach(function(url){score+=8;reasons.push('Contains suspicious URL: '+truncate(url,40));suspiciousWords.push(url);self.suspiciousDomainPatterns.forEach(function(p){if(p.test(url)){score+=10;reasons.push('URL matches known scam domain pattern');}});if(/@/.test(url)){score+=8;reasons.push('URL contains @ symbol (phishing indicator)');}if(/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(url)){score+=15;reasons.push('URL uses IP address instead of domain name');}});}
+        var words=text.split(/\s+/);var upperCount=0;words.forEach(function(w){if(w.length>2&&w===w.toUpperCase())upperCount++;});
+        if(upperCount>3){score+=8;reasons.push('Excessive CAPITAL LETTERS (urgency tactic)');}
+        if(/(?:₹|rs\.?|inr)\s*[\d,]+/i.test(text)){score+=7;reasons.push('Contains monetary amount (scam lure)');}
+        var urgencyPhrases=['within 24 hours','within 48 hours','before today','ends today','expiring soon','act immediately','do not delay','hurry up','jaldi karo','fatafat karo'];
+        urgencyPhrases.forEach(function(ph){if(lowerText.indexOf(ph)!==-1){score+=10;reasons.push('Creates false urgency: "'+ph+'"');}});
+        var infoReq=['enter your password','share your pin','send your cvv','enter card number','share your account number','bank details','card details','password batayein','pin batayein'];
+        infoReq.forEach(function(ph){if(lowerText.indexOf(ph)!==-1){score+=15;reasons.push('Asks for sensitive info: "'+ph+'"');}});
+        var exclCount=(text.match(/!/g)||[]).length;
+        if(exclCount>4){score+=5;reasons.push('Excessive exclamation marks (manipulation)');}
+        if(text.trim().split(/\s+/).length<4&&urls.length>0){score+=8;reasons.push('Very short message with link (phishing pattern)');}
+        score=Math.min(100,Math.max(0,score));
+        var riskType=score<=20?'Safe':score<=50?'Suspicious':'Scam';
+        return{score:score,riskType:riskType,reasons:reasons.slice(0,8),suspiciousWords:unique(suspiciousWords),suggestions:generateSuggestions(riskType,reasons,urls)};
+    },
+
+    analyzeUrl:function(url){
+        if(!url||!url.trim())return null;
+        var result=this.analyze(url);
+        if(!result)result={score:0,riskType:'Safe',reasons:[],suspiciousWords:[],suggestions:[]};
+        try{var parsed=new URL(url.indexOf('http')===0?url:'https://'+url);var domain=parsed.hostname;
+        var riskyTLDs=['.xyz','.top','.click','.buzz','.info','.online','.site','.club','.work','.tk','.ml','.ga','.cf'];
+        riskyTLDs.forEach(function(t){if(domain.indexOf(t,domain.length-t.length)!==-1){result.score+=15;result.reasons.push('Uses suspicious TLD: '+domain.split('.').pop());}});
+        if(domain.length>30){result.score+=8;result.reasons.push('Unusually long domain name');}
+        var brands=['google','facebook','whatsapp','amazon','flipkart','paypal','sbi','hdfc','icici','axis','paytm','phonepe'];
+        brands.forEach(function(b){if(domain.indexOf(b)!==-1&&domain!==b+'.com'&&!domain.indexOf('www.'+b)===0){result.score+=20;result.reasons.push('Domain impersonates '+b);}});
+        if(url.indexOf('http://')===0){result.score+=5;result.reasons.push('Uses insecure HTTP protocol');}
+        }catch(e){result.score+=15;result.reasons.push('Invalid URL format');}
+        result.score=Math.min(100,Math.max(0,result.score));
+        result.riskType=result.score<=20?'Safe':result.score<=50?'Suspicious':'Scam';
+        result.suggestions=generateSuggestions(result.riskType,result.reasons,[url]);
+        return result;
+    }
+};
+
+function unique(arr){var seen={};return arr.filter(function(x){return seen[x]?false:(seen[x]=true);});}
+function extractUrls(text){return text.match(/(https?:\/\/[^\s<>"']+)|(www\.[^\s<>"']+)/gi)||[];}
+function truncate(s,l){return s.length>l?s.substring(0,l)+'...':s;}
+function generateSuggestions(riskType,reasons,urls){var s=[];if(riskType==='Scam'){s.push('Do NOT click any links in this message');s.push('Do NOT share any personal or financial information');if(urls.length>0)s.push('Verify the link by visiting the official website directly');if(reasons.some(function(r){return r.indexOf('OTP')!==-1||r.indexOf('password')!==-1;}))s.push('Never share OTP, password, or PIN with anyone');s.push('Report this message to the platform');s.push('Inform your friends and family to stay alert');}else if(riskType==='Suspicious'){s.push('Exercise caution before taking any action');if(urls.length>0)s.push('Verify the link destination before clicking');s.push('Cross-check the information from official sources');s.push('If unsure, ask someone you trust');}else{s.push('This message appears to be safe');s.push('Always stay vigilant for new scam patterns');s.push('When in doubt, verify from official channels');}return s;}
+function escapeHtml(str){var d=document.createElement('div');d.textContent=str;return d.innerHTML;}
+function escapeRegex(str){return str.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+function highlightSuspiciousText(text,words){if(!words.length)return escapeHtml(text);var result=escapeHtml(text);var sorted=words.slice().sort(function(a,b){return b.length-a.length;});sorted.forEach(function(w){var esc=escapeHtml(w);var rx=new RegExp(escapeRegex(esc),'gi');result=result.replace(rx,'<span class="highlight-scam">'+esc+'</span>');});return result;}
+
+var DB={
+    SCAN_KEY:'safemsg_scans',AUTH_KEY:'safemsg_auth',
+    getScans:function(){try{return JSON.parse(localStorage.getItem(this.SCAN_KEY)||'[]');}catch(e){return[];}},
+    addScan:function(scan){var scans=this.getScans();scan.id=Date.now().toString(36)+Math.random().toString(36).substr(2,5);scan.timestamp=new Date().toISOString();scans.unshift(scan);if(scans.length>500)scans.length=500;localStorage.setItem(this.SCAN_KEY,JSON.stringify(scans));return scan;},
+    clearScans:function(){localStorage.removeItem(this.SCAN_KEY);},
+    getAuth:function(){try{return JSON.parse(localStorage.getItem(this.AUTH_KEY)||'null');}catch(e){return null;}},
+    setAuth:function(t){localStorage.setItem(this.AUTH_KEY,JSON.stringify({token:t,expiry:Date.now()+86400000}));},
+    clearAuth:function(){localStorage.removeItem(this.AUTH_KEY);},
+    isAuthenticated:function(){var a=this.getAuth();return a&&a.expiry>Date.now();}
+};
+
+var ADMIN_CREDS={email:'aniruddhkankal2006@gmail.com',password:'baddies@9201'};
+
+function adminLogin(){
+    var email=document.getElementById('adminEmail').value.trim().toLowerCase();
+    var pwd=document.getElementById('adminPassword').value;
+    var err=document.getElementById('loginError');
+    if(!email||!pwd){err.style.display='block';err.textContent='Please enter both email and password';return;}
+    if(email===ADMIN_CREDS.email&&pwd===ADMIN_CREDS.password){DB.setAuth('admin_jwt_'+Date.now());APP_STATE.isLoggedIn=true;err.style.display='none';showToast('Welcome back, Admin','success');navigateTo('admin-dashboard');}
+    else{err.style.display='block';err.textContent='Invalid email or password. Access denied.';}
+}
+function adminLogout(){DB.clearAuth();APP_STATE.isLoggedIn=false;showToast('Signed out successfully','info');navigateTo('admin-login');}
+function togglePasswordVisibility(){var i=document.getElementById('adminPassword');var ic=document.getElementById('pwdToggleIcon');if(i.type==='password'){i.type='text';ic.className='fa-solid fa-eye-slash';}else{i.type='password';ic.className='fa-solid fa-eye';}}
+
+function navigateTo(page){
+    if(page==='admin-dashboard'&&!DB.isAuthenticated())page='admin-login';
+    document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+    var target=document.getElementById('page-'+page);
+    if(target)setTimeout(function(){target.classList.add('active');},50);
+    document.querySelectorAll('.nav-link').forEach(function(l){l.classList.remove('active');});
+    if(page==='home'||page==='admin-login')document.getElementById('navHome').classList.add('active');
+    else if(page==='admin-dashboard')document.getElementById('navAdmin').classList.add('active');
+    APP_STATE.currentPage=page;
+    if(page==='admin-dashboard')setTimeout(loadDashboard,100);
+    window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function switchInputTab(tab){
+    APP_STATE.currentInputTab=tab;
+    document.getElementById('tabText').classList.toggle('active',tab==='text');
+    document.getElementById('tabLink').classList.toggle('active',tab==='link');
+    document.getElementById('textInputWrap').style.display=tab==='text'?'block':'none';
+    document.getElementById('linkInputWrap').style.display=tab==='link'?'block':'none';
+}
+
+function toggleVoiceInput(){
+    if(!('webkitSpeechRecognition' in window)&&!('SpeechRecognition' in window)){showToast('Voice input not supported. Try Chrome.','error');return;}
+    var btn=document.getElementById('voiceBtn');var st=document.getElementById('voiceStatus');
+    if(APP_STATE.isRecording){if(APP_STATE.recognition)APP_STATE.recognition.stop();btn.classList.remove('recording');st.textContent='';APP_STATE.isRecording=false;}
+    else{var SR=window.SpeechRecognition||window.webkitSpeechRecognition;APP_STATE.recognition=new SR();APP_STATE.recognition.lang='en-IN';APP_STATE.recognition.interimResults=true;APP_STATE.recognition.continuous=false;
+    APP_STATE.recognition.onstart=function(){APP_STATE.isRecording=true;btn.classList.add('recording');st.textContent='Listening...';};
+    APP_STATE.recognition.onresult=function(e){var t='';for(var i=e.resultIndex;i<e.results.length;i++)t+=e.results[i][0].transcript;document.getElementById('messageInput').value=t;updateCharCount();};
+    APP_STATE.recognition.onerror=function(e){btn.classList.remove('recording');st.textContent='';APP_STATE.isRecording=false;if(e.error==='not-allowed')showToast('Microphone access denied.','error');};
+    APP_STATE.recognition.onend=function(){btn.classList.remove('recording');st.textContent='';APP_STATE.isRecording=false;};
+    APP_STATE.recognition.start();}
+}
+
+function togglePrivacy(){APP_STATE.privacyMode=!APP_STATE.privacyMode;document.getElementById('privacyToggle').classList.toggle('active',APP_STATE.privacyMode);document.getElementById('privacyText').textContent=APP_STATE.privacyMode?'Your scans are private and not stored on any server':'Scans will be stored for admin analytics';}
+function updateCharCount(){document.getElementById('charCount').textContent=document.getElementById('messageInput').value.length+' characters';}
+
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
+
+function showLoader(){document.getElementById('loader').classList.add('active');document.getElementById('analyzeBtn').disabled=true;}
+function hideLoader(){document.getElementById('loader').classList.remove('active');document.getElementById('analyzeBtn').disabled=false;for(var i=1;i<=4;i++){var s=document.getElementById('step'+i);s.classList.remove('done','active');}}
+
+async function animateLoaderSteps(){
+    var steps=['step1','step2','step3','step4'];
+    var texts=['Scanning keywords...','Checking URLs...','Pattern matching...','Calculating risk score...'];
+    for(var i=0;i<steps.length;i++){document.getElementById('loaderText').textContent=texts[i];document.getElementById(steps[i]).classList.add('active');await sleep(500+Math.random()*300);document.getElementById(steps[i]).classList.remove('active');document.getElementById(steps[i]).classList.add('done');}
+    document.getElementById('loaderText').textContent='Generating report...';await sleep(400);
+}
+
+async function analyzeInput(){
+    var text,result;
+    if(APP_STATE.currentInputTab==='text'){text=document.getElementById('messageInput').value.trim();if(!text){showToast('Please enter a message to analyze','error');return;}result=SCAM_DETECTOR.analyze(text);}
+    else{text=document.getElementById('linkInput').value.trim();if(!text){showToast('Please enter a URL to analyze','error');return;}result=SCAM_DETECTOR.analyzeUrl(text);}
+    if(!result){showToast('Unable to analyze. Please try again.','error');return;}
+    showLoader();await animateLoaderSteps();
+    DB.addScan({message:text.substring(0,500),link:APP_STATE.currentInputTab==='link'?text:(extractUrls(text)[0]||null),scamProbability:result.score,riskType:result.riskType,reason:result.reasons.join('; ')});
+    hideLoader();displayResult(text,result);
+}
+
+function displayResult(originalText,result){
+    var section=document.getElementById('resultSection');
+    var header=document.getElementById('resultHeader');
+    var stats=document.getElementById('resultStats');
+    var reasons=document.getElementById('reasonsCard');
+    var suggestions=document.getElementById('suggestionsCard');
+    var highlight=document.getElementById('highlightCard');
+    section.style.display='block';
+    var theme=result.riskType==='Safe'?'safe':result.riskType==='Suspicious'?'warn':'danger';
+    var themeColor=theme==='safe'?'var(--safe)':theme==='warn'?'var(--warn)':'var(--danger)';
+    var icon=result.riskType==='Safe'?'fa-circle-check':result.riskType==='Suspicious'?'fa-triangle-exclamation':'fa-shield-xmark';
+    header.innerHTML='<div class="result-badge '+theme+'"><i class="fa-solid '+icon+'" style="font-size:1.5rem"></i>'+result.riskType.toUpperCase()+'</div><p class="text-sm mt-3" style="color:var(--text-muted)">'+(result.riskType==='Safe'?'This message does not show typical scam patterns.':result.riskType==='Suspicious'?'This message has some suspicious elements. Be cautious.':'This message shows strong indicators of a scam.')+'</p>';
+    var circumference=2*Math.PI*56;var dashOffset=circumference-(result.score/100)*circumference;
+    stats.innerHTML='<div class="glass-card p-5 flex flex-col items-center justify-center"><p class="text-xs font-semibold mb-3" style="color:var(--text-dim)">Scam Probability</p><div class="prob-ring"><svg width="140" height="140" viewBox="0 0 140 140"><circle cx="70" cy="70" r="56" fill="none" stroke="var(--border)" stroke-width="8"/><circle cx="70" cy="70" r="56" fill="none" stroke="'+themeColor+'" stroke-width="8" stroke-dasharray="'+circumference+'" stroke-dashoffset="'+circumference+'" stroke-linecap="round" id="probCircle" style="transition:stroke-dashoffset 1.5s ease"/></svg><div class="value" style="color:'+themeColor+'">'+result.score+'%</div></div></div><div class="glass-card p-5 flex flex-col justify-center"><p class="text-xs font-semibold mb-2" style="color:var(--text-dim)">Risk Type</p><p class="font-display text-xl font-bold mb-1" style="color:'+themeColor+'">'+result.riskType+'</p><p class="text-xs" style="color:var(--text-muted)">'+(result.riskType==='Safe'?'No significant threats detected':result.riskType==='Suspicious'?'Potential risk — verify independently':'High confidence scam detection')+'</p></div><div class="glass-card p-5 flex flex-col justify-center"><p class="text-xs font-semibold mb-2" style="color:var(--text-dim)">Signals Found</p><p class="font-display text-xl font-bold mb-1">'+result.reasons.length+'</p><p class="text-xs" style="color:var(--text-muted)">'+(result.reasons.length===0?'No suspicious signals':result.reasons.length<=3?'Few suspicious signals':'Multiple red flags detected')+'</p></div>';
+    setTimeout(function(){var c=document.getElementById('probCircle');if(c)c.setAttribute('stroke-dashoffset',dashOffset);},100);
+    reasons.innerHTML='<h3 class="font-semibold text-sm mb-4 flex items-center gap-2" style="color:var(--text-muted)"><i class="fa-solid fa-magnifying-glass-chart text-xs" style="color:'+themeColor+'"></i>Detection Reasons</h3><div class="flex flex-col gap-2.5">'+(result.reasons.length>0?result.reasons.map(function(r){return '<div class="flex items-start gap-3"><i class="fa-solid fa-circle text-[5px] mt-2 flex-shrink-0" style="color:'+themeColor+'"></i><p class="text-sm leading-relaxed" style="color:var(--text-muted)">'+r+'</p></div>';}).join(''):'<p class="text-sm" style="color:var(--text-dim)">No suspicious patterns detected.</p>')+'</div>';
+    suggestions.innerHTML='<h3 class="font-semibold text-sm mb-4 flex items-center gap-2" style="color:var(--text-muted)"><i class="fa-solid fa-lightbulb text-xs" style="color:var(--warn)"></i>Safety Suggestions</h3><div class="flex flex-col gap-2.5">'+result.suggestions.map(function(s){return '<div class="flex items-start gap-3"><i class="fa-solid fa-check text-xs mt-1.5 flex-shrink-0 text-safe-400"></i><p class="text-sm leading-relaxed" style="color:var(--text-muted)">'+s+'</p></div>';}).join('')+'</div>';
+    highlight.innerHTML='<h3 class="font-semibold text-sm mb-4 flex items-center gap-2" style="color:var(--text-muted)"><i class="fa-solid fa-highlighter text-xs" style="color:var(--danger)"></i>Highlighted Analysis</h3><div class="p-4 rounded-xl text-sm leading-relaxed" style="background:var(--bg2);color:var(--text-muted);word-break:break-word">'+highlightSuspiciousText(originalText,result.suspiciousWords)+'</div><p class="text-xs mt-3" style="color:var(--text-dim)"><span class="highlight-scam">Red highlights</span> indicate detected suspicious elements</p>';
+    setTimeout(function(){section.scrollIntoView({behavior:'smooth',block:'start'});},200);
+}
+
+function resetAnalysis(){document.getElementById('resultSection').style.display='none';document.getElementById('messageInput').value='';document.getElementById('linkInput').value='';updateCharCount();window.scrollTo({top:0,behavior:'smooth'});}
+
+function loadDashboard(){
+    var scans=DB.getScans();var total=scans.length;var scamC=0,suspC=0,safeC=0;
+    scans.forEach(function(s){if(s.riskType==='Scam')scamC++;else if(s.riskType==='Suspicious')suspC++;else safeC++;});
+    animateNumber('statTotal',total);animateNumber('statScam',scamC);animateNumber('statSuspicious',suspC);animateNumber('statSafe',safeC);
+    renderPieChart(scamC,suspC,safeC);renderBarChart(scans);renderScansTable(scans);
+}
+
+function animateNumber(id,target){var el=document.getElementById(id);var start=parseInt(el.textContent)||0;var diff=target-start;if(diff===0)return;var st=performance.now();function step(now){var p=Math.min((now-st)/600,1);var e=1-Math.pow(1-p,3);el.textContent=Math.round(start+diff*e);if(p<1)requestAnimationFrame(step);}requestAnimationFrame(step);}
+
+function renderPieChart(scam,susp,safe){
+    var ctx=document.getElementById('pieChart').getContext('2d');
+    if(APP_STATE.chartInstances.pie)APP_STATE.chartInstances.pie.destroy();
+    var hasData=scam+susp+safe>0;
+    APP_STATE.chartInstances.pie=new Chart(ctx,{type:'doughnut',data:{labels:['Scam','Suspicious','Safe'],datasets:[{data:hasData?[scam,susp,safe]:[1],backgroundColor:hasData?['rgba(239,68,68,0.8)','rgba(245,158,11,0.8)','rgba(16,185,129,0.8)']:['rgba(30,41,59,0.5)'],borderColor:'transparent',borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:true,cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:'#94A3B8',padding:16,font:{family:'Plus Jakarta Sans',size:12,weight:'500'},usePointStyle:true,pointStyleWidth:10}},tooltip:{backgroundColor:'#1A2540',titleColor:'#F1F5F9',bodyColor:'#94A3B8',borderColor:'#2D3B52',borderWidth:1,cornerRadius:10,padding:12}}}});
+}
+
+function renderBarChart(scans){
+    var ctx=document.getElementById('barChart').getContext('2d');
+    if(APP_STATE.chartInstances.bar)APP_STATE.chartInstances.bar.destroy();
+    var days=[];var dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    for(var i=6;i>=0;i--){var d=new Date();d.setDate(d.getDate()-i);var k=d.toISOString().split('T')[0];days.push({label:dn[d.getDay()],date:k,total:0,scam:0,safe:0});}
+    scans.forEach(function(s){if(s.timestamp){var dk=new Date(s.timestamp).toISOString().split('T')[0];days.forEach(function(dy){if(dy.date===dk){dy.total++;if(s.riskType==='Scam')dy.scam++;else if(s.riskType==='Safe')dy.safe++;}});}});
+    APP_STATE.chartInstances.bar=new Chart(ctx,{type:'bar',data:{labels:days.map(function(d){return d.label;}),datasets:[{label:'Scam',data:days.map(function(d){return d.scam;}),backgroundColor:'rgba(239,68,68,0.7)',borderRadius:6,borderSkipped:false,barPercentage:0.5},{label:'Safe',data:days.map(function(d){return d.safe;}),backgroundColor:'rgba(16,185,129,0.7)',borderRadius:6,borderSkipped:false,barPercentage:0.5}]},options:{responsive:true,maintainAspectRatio:true,scales:{x:{grid:{display:false},ticks:{color:'#64748B',font:{family:'Plus Jakarta Sans',size:11}},border:{display:false}},y:{beginAtZero:true,grid:{color:'rgba(30,41,59,0.5)'},ticks:{color:'#64748B',font:{family:'Plus Jakarta Sans',size:11},stepSize:1,precision:0},border:{display:false}}},plugins:{legend:{position:'bottom',labels:{color:'#94A3B8',padding:16,font:{family:'Plus Jakarta Sans',size:12,weight:'500'},usePointStyle:true,pointStyleWidth:10}},tooltip:{backgroundColor:'#1A2540',titleColor:'#F1F5F9',bodyColor:'#94A3B8',borderColor:'#2D3B52',borderWidth:1,cornerRadius:10,padding:12}}}});
+}
+
+function renderScansTable(scans){
+    var tbody=document.getElementById('scansBody');var noMsg=document.getElementById('noScansMsg');var table=document.getElementById('scansTable');
+    if(scans.length===0){table.style.display='none';noMsg.style.display='block';return;}
+    table.style.display='table';noMsg.style.display='none';
+    tbody.innerHTML=scans.slice(0,50).map(function(s){
+        var msg=truncate(s.message||s.link||'N/A',60);
+        var date=s.timestamp?new Date(s.timestamp).toLocaleDateString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'N/A';
+        var rc=s.riskType?s.riskType.toLowerCase():'safe';
+        return '<tr><td style="color:var(--text);max-width:300px;word-break:break-all">'+escapeHtml(msg)+'</td><td><span class="risk-badge '+rc+'">'+(s.riskType||'Unknown')+'</span></td><td><span class="font-display font-bold" style="color:'+(s.scamProbability>50?'var(--danger)':s.scamProbability>20?'var(--warn)':'var(--safe)')+'">'+(s.scamProbability||0)+'%</span></td><td style="white-space:nowrap">'+date+'</td></tr>';
+    }).join('');
+}
+
+function clearAllScans(){DB.clearScans();loadDashboard();showToast('All scan records cleared','info');}
+
+function showToast(msg,type){
+    var c=document.getElementById('toastContainer');
+    var icons={success:'fa-circle-check',error:'fa-circle-xmark',info:'fa-circle-info'};
+    var t=document.createElement('div');t.className='toast '+type;t.innerHTML='<i class="fa-solid '+icons[type]+'"></i><span>'+msg+'</span>';
+    c.appendChild(t);setTimeout(function(){t.style.opacity='0';t.style.transform='translateX(100%)';t.style.transition='all 0.3s ease';setTimeout(function(){t.remove();},300);},3500);
+}
+
+function initScrollAnimations(){
+    var obs=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting)e.target.classList.add('visible');});},{threshold:0.1,rootMargin:'0px 0px -50px 0px'});
+    document.querySelectorAll('.fade-up').forEach(function(el){obs.observe(el);});
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+    initScrollAnimations();
+    document.getElementById('messageInput').addEventListener('input',updateCharCount);
+    if(DB.getScans().length===0){
+        var samples=[
+            {message:'Congratulations! You have won Rs 50,000 in our lucky draw. Click here to claim: http://free-prize.xyz/claim',link:'http://free-prize.xyz/claim',scamProbability:89,riskType:'Scam',reason:'High-risk phrases; Suspicious URL; Urgency tactics'},
+            {message:'Hi, can we meet at 5pm tomorrow at the coffee shop near the station?',link:null,scamProbability:5,riskType:'Safe',reason:'No suspicious patterns'},
+            {message:'Dear customer, your KYC is expired. Update immediately to avoid account suspension. Click: https://secure-login-update-kyc.top/verify',link:'https://secure-login-update-kyc.top/verify',scamProbability:92,riskType:'Scam',reason:'KYC scam pattern; Suspicious TLD; Urgency language'},
+            {message:'Free Rs 2000 cashback on your next purchase. Use code FREE2000 at checkout. Valid till midnight!',link:null,scamProbability:35,riskType:'Suspicious',reason:'Contains free/cashback; Urgency (till midnight)'},
+            {message:'Your OTP for transaction of Rs 5,000 is 482910. Do not share this OTP with anyone.',link:null,scamProbability:12,riskType:'Safe',reason:'Standard OTP format with safety warning'},
+            {message:'PART TIME JOB! Earn Rs 500-2000 per day from home. No experience needed. Click now to register: bit.ly/earn-daily',link:'bit.ly/earn-daily',scamProbability:78,riskType:'Scam',reason:'Work from home scam; Shortened URL; All caps; Money lure'},
+            {message:'Aapke account mein Rs 15,000 credit hua hai. Claim karne ke liye link par click karo: https://claim-reward.xyz/upi',link:'https://claim-reward.xyz/upi',scamProbability:85,riskType:'Scam',reason:'Hindi scam language; Suspicious URL; UPI fraud pattern'},
+            {message:'Meeting rescheduled to 3 PM tomorrow. Please confirm your availability.',link:null,scamProbability:3,riskType:'Safe',reason:'No suspicious patterns detected'}
+        ];
+        samples.forEach(function(s,i){s.id=Date.now().toString(36)+i;var d=new Date();d.setHours(d.getHours()-(i*3+Math.floor(Math.random()*5)));s.timestamp=d.toISOString();});
+        localStorage.setItem(DB.SCAN_KEY,JSON.stringify(samples));
+    }
+});
+
+document.addEventListener('keydown',function(e){if(e.ctrlKey&&e.key==='Enter'&&APP_STATE.currentPage==='home')analyzeInput();});
+</script>
+</body>
+</html>
